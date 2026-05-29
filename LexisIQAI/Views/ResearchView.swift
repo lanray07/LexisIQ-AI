@@ -52,6 +52,10 @@ struct AIWorkspaceView: View {
                         .font(.subheadline)
                         .foregroundStyle(LexisTheme.ink)
 
+                    if title == "AI Legal Research Engine" {
+                        PremiumHumanAssetView(title: "AI research desk", assetName: "research-desk")
+                    }
+
                     PremiumPanel {
                         VStack(alignment: .leading, spacing: 12) {
                             Text(promptTitle).font(.headline)
@@ -165,4 +169,3 @@ struct ErrorPanel: View {
         }
     }
 }
-

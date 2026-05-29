@@ -23,7 +23,7 @@ struct DashboardView: View {
                     }
 
                     UpgradeBanner()
-                    HumanAssetPlaceholderView(title: "Courtroom strategy workspace placeholder", systemImage: "briefcase")
+                    PremiumHumanAssetView(title: "Courtroom strategy workspace", assetName: "dashboard-courtroom")
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
                         StatTile(title: "Active Matters", value: matters.count, icon: "folder")
                         StatTile(title: "Research", value: research.count, icon: "magnifyingglass")

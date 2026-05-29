@@ -29,7 +29,7 @@ struct OnboardingView: View {
                     }
                     .padding(.top, 24)
 
-                    HumanAssetPlaceholderView(title: "Executive legal intelligence imagery placeholder", systemImage: "building.columns")
+                    PremiumHumanAssetView(title: "Executive legal intelligence", assetName: "onboarding-practitioners")
 
                     PremiumPanel {
                         VStack(spacing: 16) {

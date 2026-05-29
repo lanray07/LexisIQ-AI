@@ -99,24 +99,22 @@ struct UpgradeBanner: View {
     }
 }
 
-struct HumanAssetPlaceholderView: View {
+struct PremiumHumanAssetView: View {
     var title: String
-    var systemImage: String
+    var assetName: String
 
     var body: some View {
         ZStack(alignment: .bottomLeading) {
-            Rectangle()
-                .fill(
-                    LinearGradient(
-                        colors: [LexisTheme.navy, .black, LexisTheme.gold.opacity(0.22)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-            Image(systemName: systemImage)
-                .font(.system(size: 76))
-                .foregroundStyle(LexisTheme.gold.opacity(0.55))
+            Image(assetName)
+                .resizable()
+                .scaledToFill()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .clipped()
+            LinearGradient(
+                colors: [.black.opacity(0.72), .black.opacity(0.18), LexisTheme.navy.opacity(0.55)],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
             Text(title.uppercased())
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.white)
