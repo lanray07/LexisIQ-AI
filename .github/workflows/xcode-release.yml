@@ -25,7 +25,7 @@ env:
   PROJECT_PATH: LexisIQAI.xcodeproj
   SCHEME: LexisIQAI
   CONFIGURATION: Release
-  BUNDLE_IDENTIFIER: com.lexisiq.ai
+  BUNDLE_IDENTIFIER: com.lexisiqai.app
   ARCHIVE_PATH: ${{ github.workspace }}/build/LexisIQAI.xcarchive
   EXPORT_PATH: ${{ github.workspace }}/build/export
   EXPORT_METHOD: ${{ secrets.EXPORT_METHOD || 'app-store-connect' }}
