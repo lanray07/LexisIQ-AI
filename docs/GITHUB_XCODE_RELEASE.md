@@ -33,7 +33,7 @@ The workflow also accepts these aliases if they already exist:
 
 ## Optional Signing Secrets
 
-Automatic signing is enabled by default with App Store Connect API authentication. If the repository already stores manual signing assets, the workflow can import them:
+The workflow can generate App Store distribution signing assets at runtime using the App Store Connect API key. If the repository already stores manual signing assets, the workflow imports them instead:
 
 - `BUILD_CERTIFICATE_BASE64`
 - `P12_PASSWORD`
