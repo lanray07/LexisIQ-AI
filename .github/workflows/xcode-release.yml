@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - "v*"
     paths:
       - "LexisIQAI/**"
       - "LexisIQAI.xcodeproj/**"
@@ -65,7 +67,7 @@ jobs:
     name: Archive and Upload to App Store Connect
     runs-on: macos-15
     needs: simulator-build
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -180,7 +182,7 @@ jobs:
           ls -la "$EXPORT_PATH"
 
       - name: Upload IPA to App Store Connect
-        if: github.event_name == 'release' || inputs.upload_to_app_store_connect == true
+        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v') || inputs.upload_to_app_store_connect == true
         run: |
           set -euo pipefail
           IPA_PATH="$(find "$EXPORT_PATH" -name '*.ipa' -maxdepth 1 -print -quit)"
