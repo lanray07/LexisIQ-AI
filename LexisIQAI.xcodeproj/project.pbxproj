@@ -1,0 +1,368 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A00000000000000000000001 /* LexisIQAIApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000001 /* LexisIQAIApp.swift */; };
+		A00000000000000000000002 /* LegalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000002 /* LegalModels.swift */; };
+		A00000000000000000000003 /* AIRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000003 /* AIRequest.swift */; };
+		A00000000000000000000004 /* MockAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000004 /* MockAIService.swift */; };
+		A00000000000000000000005 /* RemoteAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000005 /* RemoteAIService.swift */; };
+		A00000000000000000000006 /* LegalWorkflowServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000006 /* LegalWorkflowServices.swift */; };
+		A00000000000000000000007 /* SubscriptionStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000007 /* SubscriptionStore.swift */; };
+		A00000000000000000000008 /* VoiceServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000008 /* VoiceServices.swift */; };
+		A00000000000000000000009 /* OCRServicePlaceholder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000009 /* OCRServicePlaceholder.swift */; };
+		A0000000000000000000000A /* GraphModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000A /* GraphModels.swift */; };
+		A0000000000000000000000B /* PDFExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000B /* PDFExportService.swift */; };
+		A0000000000000000000000C /* PremiumComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000C /* PremiumComponents.swift */; };
+		A0000000000000000000000D /* AIWorkflowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000D /* AIWorkflowViewModel.swift */; };
+		A0000000000000000000000E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000E /* ContentView.swift */; };
+		A0000000000000000000000F /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000F /* OnboardingView.swift */; };
+		A00000000000000000000010 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000010 /* DashboardView.swift */; };
+		A00000000000000000000011 /* ResearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000011 /* ResearchView.swift */; };
+		A00000000000000000000012 /* VoiceNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000012 /* VoiceNotesView.swift */; };
+		A00000000000000000000013 /* ProductivityViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000013 /* ProductivityViews.swift */; };
+		A00000000000000000000014 /* MatterSettingsPaywallViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000014 /* MatterSettingsPaywallViews.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B00000000000000000000000 /* LexisIQAI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LexisIQAI.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B00000000000000000000001 /* LexisIQAIApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LexisIQAIApp.swift; sourceTree = "<group>"; };
+		B00000000000000000000002 /* LegalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/LegalModels.swift; sourceTree = "<group>"; };
+		B00000000000000000000003 /* AIRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/AIRequest.swift; sourceTree = "<group>"; };
+		B00000000000000000000004 /* MockAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/MockAIService.swift; sourceTree = "<group>"; };
+		B00000000000000000000005 /* RemoteAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/RemoteAIService.swift; sourceTree = "<group>"; };
+		B00000000000000000000006 /* LegalWorkflowServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/LegalWorkflowServices.swift; sourceTree = "<group>"; };
+		B00000000000000000000007 /* SubscriptionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/SubscriptionStore.swift; sourceTree = "<group>"; };
+		B00000000000000000000008 /* VoiceServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Voice/VoiceServices.swift; sourceTree = "<group>"; };
+		B00000000000000000000009 /* OCRServicePlaceholder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRPlaceholder/OCRServicePlaceholder.swift; sourceTree = "<group>"; };
+		B0000000000000000000000A /* GraphModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeGraph/GraphModels.swift; sourceTree = "<group>"; };
+		B0000000000000000000000B /* PDFExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Services/PDFExportService.swift; sourceTree = "<group>"; };
+		B0000000000000000000000C /* PremiumComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components/PremiumComponents.swift; sourceTree = "<group>"; };
+		B0000000000000000000000D /* AIWorkflowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewModels/AIWorkflowViewModel.swift; sourceTree = "<group>"; };
+		B0000000000000000000000E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/ContentView.swift; sourceTree = "<group>"; };
+		B0000000000000000000000F /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/OnboardingView.swift; sourceTree = "<group>"; };
+		B00000000000000000000010 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/DashboardView.swift; sourceTree = "<group>"; };
+		B00000000000000000000011 /* ResearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/ResearchView.swift; sourceTree = "<group>"; };
+		B00000000000000000000012 /* VoiceNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/VoiceNotesView.swift; sourceTree = "<group>"; };
+		B00000000000000000000013 /* ProductivityViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/ProductivityViews.swift; sourceTree = "<group>"; };
+		B00000000000000000000014 /* MatterSettingsPaywallViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views/MatterSettingsPaywallViews.swift; sourceTree = "<group>"; };
+		B00000000000000000000015 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Resources/Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C00000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = ( ); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D00000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				D00000000000000000000002 /* LexisIQAI */,
+				D00000000000000000000003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D00000000000000000000002 /* LexisIQAI */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000001 /* LexisIQAIApp.swift */,
+				B00000000000000000000002 /* LegalModels.swift */,
+				B00000000000000000000003 /* AIRequest.swift */,
+				B00000000000000000000004 /* MockAIService.swift */,
+				B00000000000000000000005 /* RemoteAIService.swift */,
+				B00000000000000000000006 /* LegalWorkflowServices.swift */,
+				B00000000000000000000007 /* SubscriptionStore.swift */,
+				B00000000000000000000008 /* VoiceServices.swift */,
+				B00000000000000000000009 /* OCRServicePlaceholder.swift */,
+				B0000000000000000000000A /* GraphModels.swift */,
+				B0000000000000000000000B /* PDFExportService.swift */,
+				B0000000000000000000000C /* PremiumComponents.swift */,
+				B0000000000000000000000D /* AIWorkflowViewModel.swift */,
+				B0000000000000000000000E /* ContentView.swift */,
+				B0000000000000000000000F /* OnboardingView.swift */,
+				B00000000000000000000010 /* DashboardView.swift */,
+				B00000000000000000000011 /* ResearchView.swift */,
+				B00000000000000000000012 /* VoiceNotesView.swift */,
+				B00000000000000000000013 /* ProductivityViews.swift */,
+				B00000000000000000000014 /* MatterSettingsPaywallViews.swift */,
+				B00000000000000000000015 /* Info.plist */,
+			);
+			path = LexisIQAI;
+			sourceTree = "<group>";
+		};
+		D00000000000000000000003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B00000000000000000000000 /* LexisIQAI.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		E00000000000000000000001 /* LexisIQAI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F00000000000000000000003 /* Build configuration list for PBXNativeTarget "LexisIQAI" */;
+			buildPhases = (
+				C00000000000000000000002 /* Sources */,
+				C00000000000000000000001 /* Frameworks */,
+				C00000000000000000000003 /* Resources */,
+			);
+			buildRules = ( );
+			dependencies = ( );
+			name = LexisIQAI;
+			productName = LexisIQAI;
+			productReference = B00000000000000000000000 /* LexisIQAI.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E00000000000000000000002 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					E00000000000000000000001 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = F00000000000000000000001 /* Build configuration list for PBXProject "LexisIQAI" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = ( en, Base, );
+			mainGroup = D00000000000000000000001;
+			productRefGroup = D00000000000000000000003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = ( E00000000000000000000001 /* LexisIQAI */, );
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		C00000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = ( ); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C00000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A00000000000000000000001 /* LexisIQAIApp.swift in Sources */,
+				A00000000000000000000002 /* LegalModels.swift in Sources */,
+				A00000000000000000000003 /* AIRequest.swift in Sources */,
+				A00000000000000000000004 /* MockAIService.swift in Sources */,
+				A00000000000000000000005 /* RemoteAIService.swift in Sources */,
+				A00000000000000000000006 /* LegalWorkflowServices.swift in Sources */,
+				A00000000000000000000007 /* SubscriptionStore.swift in Sources */,
+				A00000000000000000000008 /* VoiceServices.swift in Sources */,
+				A00000000000000000000009 /* OCRServicePlaceholder.swift in Sources */,
+				A0000000000000000000000A /* GraphModels.swift in Sources */,
+				A0000000000000000000000B /* PDFExportService.swift in Sources */,
+				A0000000000000000000000C /* PremiumComponents.swift in Sources */,
+				A0000000000000000000000D /* AIWorkflowViewModel.swift in Sources */,
+				A0000000000000000000000E /* ContentView.swift in Sources */,
+				A0000000000000000000000F /* OnboardingView.swift in Sources */,
+				A00000000000000000000010 /* DashboardView.swift in Sources */,
+				A00000000000000000000011 /* ResearchView.swift in Sources */,
+				A00000000000000000000012 /* VoiceNotesView.swift in Sources */,
+				A00000000000000000000013 /* ProductivityViews.swift in Sources */,
+				A00000000000000000000014 /* MatterSettingsPaywallViews.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		F00000000000000000000004 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = ( "DEBUG=1", "$(inherited)", );
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		F00000000000000000000005 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		F00000000000000000000006 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LexisIQAI/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = ( "$(inherited)", "@executable_path/Frameworks", );
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lexisiq.ai;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F00000000000000000000007 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = LexisIQAI/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = ( "$(inherited)", "@executable_path/Frameworks", );
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.lexisiq.ai;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		F00000000000000000000001 /* Build configuration list for PBXProject "LexisIQAI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000000004 /* Debug */,
+				F00000000000000000000005 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F00000000000000000000003 /* Build configuration list for PBXNativeTarget "LexisIQAI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F00000000000000000000006 /* Debug */,
+				F00000000000000000000007 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = E00000000000000000000002 /* Project object */;
+}
+
