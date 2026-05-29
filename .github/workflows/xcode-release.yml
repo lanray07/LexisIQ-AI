@@ -194,7 +194,8 @@ jobs:
               )
               try:
                   with urllib.request.urlopen(req, timeout=60) as response:
-                      return json.loads(response.read().decode())
+                      raw = response.read().decode()
+                      return {} if not raw else json.loads(raw)
               except urllib.error.HTTPError as exc:
                   detail = exc.read().decode()
                   raise RuntimeError(f"{method} {path} failed with {exc.code}: {detail}") from exc
@@ -222,6 +223,15 @@ jobs:
               bundle_id = created_bundle["data"]["id"]
 
           csr_content = Path(os.environ["CSR_PATH"]).read_text()
+          certificate_query = urllib.parse.urlencode(
+              {"filter[certificateType]": "DISTRIBUTION,IOS_DISTRIBUTION"}
+          )
+          for existing in request("GET", f"/certificates?{certificate_query}").get("data", []):
+              cert_type = existing.get("attributes", {}).get("certificateType", "unknown")
+              display_name = existing.get("attributes", {}).get("displayName", existing["id"])
+              print(f"Revoking existing distribution certificate {display_name} ({cert_type})")
+              request("DELETE", f"/certificates/{existing['id']}")
+
           cert_error = None
           certificate = None
           for cert_type in ("DISTRIBUTION", "IOS_DISTRIBUTION"):
