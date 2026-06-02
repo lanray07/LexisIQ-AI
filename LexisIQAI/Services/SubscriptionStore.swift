@@ -32,5 +32,17 @@ final class SubscriptionStore: ObservableObject {
             await transaction.finish()
         }
     }
-}
 
+    func purchase(productID: String) async throws -> Bool {
+        if products.isEmpty {
+            await loadProducts()
+        }
+
+        guard let product = products.first(where: { $0.id == productID }) else {
+            return false
+        }
+
+        try await purchase(product)
+        return true
+    }
+}

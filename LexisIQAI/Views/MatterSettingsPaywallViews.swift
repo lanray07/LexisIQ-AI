@@ -51,6 +51,10 @@ struct MattersView: View {
 
 struct PaywallView: View {
     @EnvironmentObject private var store: SubscriptionStore
+    @State private var purchaseMessage: PurchaseMessage?
+
+    private let privacyURL = URL(string: "https://github.com/lanray07/LexisIQ-AI/blob/main/PRIVACY.md")!
+    private let eulaURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 
     var body: some View {
         ZStack {
@@ -58,9 +62,18 @@ struct PaywallView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     ScreenTitle("LexisIQ AI Plans", "Premium legal intelligence for professionals, chambers, and enterprise-grade workspaces.")
-                    PlanCard(name: "Free", price: "£0", features: ["Limited searches", "Limited uploads", "Limited voice notes"])
-                    PlanCard(name: "Professional", price: "£29.99/mo or £249.99/yr", features: ["Unlimited research", "Unlimited voice processing", "Contract analyzer", "Litigation tools", "PDF exports"])
-                    PlanCard(name: "Chambers", price: "£99.99/mo", features: ["Advanced research", "Advanced analytics", "Matter management", "Premium workspaces", "Knowledge graph"])
+                    PlanCard(name: "Free", price: "GBP 0", renewal: "No subscription. Limited local productivity access.", features: ["Limited searches", "Limited uploads", "Limited voice notes"]) {
+                        purchaseMessage = PurchaseMessage(title: "Free Plan Active", body: "You are currently using the Free plan.")
+                    }
+                    PlanCard(name: "Professional Monthly", price: "GBP 29.99", renewal: "Auto-renews monthly until cancelled.", features: ["Unlimited research", "Unlimited voice processing", "Contract analyzer", "Litigation tools", "PDF exports"]) {
+                        Task { await purchase(SubscriptionStore.professionalMonthly, planName: "Professional Monthly") }
+                    }
+                    PlanCard(name: "Professional Yearly", price: "GBP 249.99", renewal: "Auto-renews yearly until cancelled.", features: ["Unlimited research", "Unlimited voice processing", "Contract analyzer", "Litigation tools", "PDF exports"]) {
+                        Task { await purchase(SubscriptionStore.professionalYearly, planName: "Professional Yearly") }
+                    }
+                    PlanCard(name: "Chambers Monthly", price: "GBP 99.99", renewal: "Auto-renews monthly until cancelled.", features: ["Advanced research", "Advanced analytics", "Matter management", "Premium workspaces", "Knowledge graph"]) {
+                        Task { await purchase(SubscriptionStore.chambersMonthly, planName: "Chambers Monthly") }
+                    }
 
                     if store.isLoading {
                         LoadingPanel()
@@ -69,11 +82,28 @@ struct PaywallView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("StoreKit 2 scaffolding")
                                     .font(.headline)
-                                Text("Product IDs are ready. Configure App Store Connect products to enable live purchases.")
+                                Text("Product IDs are configured. Live purchasing is available when App Store Connect returns the approved subscription products.")
                                     .font(.caption)
                                     .foregroundStyle(LexisTheme.ink)
                             }
                             .foregroundStyle(.white)
+                        }
+                    }
+
+                    PremiumPanel {
+                        VStack(alignment: .leading, spacing: 10) {
+                            Text("Subscription Terms")
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                            Text("Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period. Payment is charged to your Apple ID. Manage or cancel subscriptions in your App Store account settings.")
+                                .font(.caption)
+                                .foregroundStyle(LexisTheme.ink)
+                            HStack(spacing: 14) {
+                                Link("Privacy Policy", destination: privacyURL)
+                                Link("Terms of Use (EULA)", destination: eulaURL)
+                            }
+                            .font(.caption.weight(.semibold))
+                            .tint(LexisTheme.gold)
                         }
                     }
                     DisclaimerBlock()
@@ -82,13 +112,32 @@ struct PaywallView: View {
             }
         }
         .task { await store.loadProducts() }
+        .alert(item: $purchaseMessage) { message in
+            Alert(title: Text(message.title), message: Text(message.body), dismissButton: .default(Text("OK")))
+        }
+    }
+
+    private func purchase(_ productID: String, planName: String) async {
+        purchaseMessage = PurchaseMessage(title: "Preparing Purchase", body: "Loading \(planName) through StoreKit.")
+        do {
+            let didStartPurchase = try await store.purchase(productID: productID)
+            if didStartPurchase {
+                purchaseMessage = PurchaseMessage(title: "Purchase Updated", body: "\(planName) was processed by StoreKit. Apple will confirm the final subscription status.")
+            } else {
+                purchaseMessage = PurchaseMessage(title: "Subscription Unavailable", body: "\(planName) is configured for StoreKit but is not currently available from App Store Connect. Please try again after the subscription products are approved.")
+            }
+        } catch {
+            purchaseMessage = PurchaseMessage(title: "Purchase Error", body: error.localizedDescription)
+        }
     }
 }
 
 struct PlanCard: View {
     var name: String
     var price: String
+    var renewal: String
     var features: [String]
+    var action: () -> Void
 
     var body: some View {
         PremiumPanel {
@@ -101,12 +150,16 @@ struct PlanCard: View {
                         .font(.headline)
                         .foregroundStyle(LexisTheme.gold)
                 }
+                Text(renewal)
+                    .font(.caption)
+                    .foregroundStyle(LexisTheme.muted)
                 ForEach(features, id: \.self) { feature in
                     Label(feature, systemImage: "checkmark")
                         .font(.caption)
                         .foregroundStyle(LexisTheme.ink)
                 }
                 Button {
+                    action()
                 } label: {
                     Label(name == "Free" ? "Current Plan" : "Upgrade", systemImage: name == "Free" ? "checkmark.circle" : "crown")
                         .frame(maxWidth: .infinity)
@@ -117,6 +170,12 @@ struct PlanCard: View {
             .foregroundStyle(.white)
         }
     }
+}
+
+struct PurchaseMessage: Identifiable {
+    let id = UUID()
+    let title: String
+    let body: String
 }
 
 struct SettingsView: View {
@@ -146,8 +205,8 @@ struct SettingsView: View {
                     Toggle("Include citation placeholders", isOn: $exportCitations)
                 }
                 Section("Legal") {
-                    NavigationLink("Privacy Policy") { LegalTextView(title: "Privacy Policy", text: "Privacy policy placeholder. Store local SwiftData securely and connect enterprise retention, encryption, and account controls before production release.") }
-                    NavigationLink("Terms") { LegalTextView(title: "Terms", text: "Terms placeholder. This app is an informational productivity platform and does not provide legal representation.") }
+                    Link("Privacy Policy", destination: URL(string: "https://github.com/lanray07/LexisIQ-AI/blob/main/PRIVACY.md")!)
+                    Link("Terms of Use (EULA)", destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!)
                     NavigationLink("Legal Disclaimer") { LegalTextView(title: "Legal Disclaimer", text: "Informational tool only. Not legal advice. Lawyer review required. Jurisdiction-specific verification recommended. AI outputs may contain errors.") }
                 }
                 Section("Data") {
@@ -218,4 +277,3 @@ struct PlaceholderArchitectureView: View {
         }
     }
 }
-

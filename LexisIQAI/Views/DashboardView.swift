@@ -32,7 +32,7 @@ struct DashboardView: View {
                     }
 
                     SectionHeader(title: "Quick Actions", detail: "Mock AI Active")
-                    QuickActionGrid()
+                    QuickActionGrid(profile: profile)
 
                     SectionHeader(title: "Recent Research")
                     if research.isEmpty {
@@ -81,26 +81,59 @@ struct StatTile: View {
 }
 
 struct QuickActionGrid: View {
-    private let actions = [
-        ("Research Issue", "magnifyingglass"),
-        ("Analyze Contract", "doc.text.magnifyingglass"),
-        ("Voice Notes", "waveform"),
-        ("Build Timeline", "calendar.badge.clock"),
-        ("Draft Memo", "square.and.pencil"),
-        ("Upload Document", "tray.and.arrow.up")
-    ]
+    var profile: LegalProfile
+
+    private enum Action: String, CaseIterable {
+        case research = "Research Issue"
+        case contract = "Analyze Contract"
+        case voice = "Voice Notes"
+        case timeline = "Build Timeline"
+        case draft = "Draft Memo"
+        case upload = "Upload Document"
+
+        var icon: String {
+            switch self {
+            case .research: "magnifyingglass"
+            case .contract: "doc.text.magnifyingglass"
+            case .voice: "waveform"
+            case .timeline: "calendar.badge.clock"
+            case .draft: "square.and.pencil"
+            case .upload: "tray.and.arrow.up"
+            }
+        }
+    }
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 155), spacing: 10)], spacing: 10) {
-            ForEach(actions, id: \.0) { action in
-                Button {} label: {
-                    Label(action.0, systemImage: action.1)
+            ForEach(Action.allCases, id: \.self) { action in
+                NavigationLink {
+                    destination(for: action)
+                } label: {
+                    Label(action.rawValue, systemImage: action.icon)
                         .font(.subheadline.weight(.semibold))
                         .frame(maxWidth: .infinity, minHeight: 46)
                 }
                 .buttonStyle(.bordered)
                 .tint(LexisTheme.gold)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func destination(for action: Action) -> some View {
+        switch action {
+        case .research:
+            ResearchView(profile: profile)
+        case .contract:
+            ContractAnalyzerView(profile: profile)
+        case .voice:
+            VoiceNotesView(profile: profile)
+        case .timeline:
+            ChronologyBuilderView()
+        case .draft:
+            DraftingAssistantView(profile: profile)
+        case .upload:
+            DocumentUploadView(profile: profile)
         }
     }
 }
