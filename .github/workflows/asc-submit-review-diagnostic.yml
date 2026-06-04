@@ -1,0 +1,235 @@
+name: Submit App Store Review Diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/asc-submit-review-diagnostic.yml"
+
+permissions:
+  contents: write
+
+env:
+  APP_ID: "6774482124"
+  APP_VERSION: "1.0"
+  PLATFORM: "IOS"
+  ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID || secrets.APP_STORE_CONNECT_KEY_ID || secrets.ASC_KEY_ID }}
+  ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID || secrets.APP_STORE_CONNECT_ISSUER_ID || secrets.ASC_ISSUER_ID }}
+  ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY || secrets.APP_STORE_CONNECT_PRIVATE_KEY || secrets.ASC_PRIVATE_KEY }}
+  ASC_PRIVATE_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY_BASE64 || secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 || secrets.ASC_PRIVATE_KEY_BASE64 }}
+  SUBSCRIPTION_GROUP_ID: "22120736"
+
+jobs:
+  submit-review:
+    name: Submit and publish App Store Connect report
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+
+      - name: Attempt submit and write report
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install pyjwt cryptography
+          python <<'PY'
+          import base64
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from pathlib import Path
+
+          import jwt
+
+          report = []
+
+          def note(line=""):
+              print(line)
+              report.append(line)
+
+          def redact(text):
+              if not text:
+                  return ""
+              return text.replace(os.environ.get("ASC_KEY_ID", ""), "[ASC_KEY_ID]")
+
+          key = os.environ.get("ASC_PRIVATE_KEY", "")
+          key_base64 = os.environ.get("ASC_PRIVATE_KEY_BASE64", "")
+          if key_base64:
+              key = base64.b64decode(key_base64).decode()
+
+          token = jwt.encode(
+              {
+                  "iss": os.environ["ASC_ISSUER_ID"],
+                  "iat": int(time.time()) - 60,
+                  "exp": int(time.time()) + 20 * 60,
+                  "aud": "appstoreconnect-v1",
+              },
+              key,
+              algorithm="ES256",
+              headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"},
+          )
+
+          base_url = "https://api.appstoreconnect.apple.com/v1"
+          app_id = os.environ["APP_ID"]
+          target_product_ids = {
+              "lexisiq.professional.monthly",
+              "lexisiq.professional.yearly",
+              "lexisiq.chambers.monthly",
+          }
+
+          def request(method, path, payload=None):
+              body = None if payload is None else json.dumps(payload).encode()
+              req = urllib.request.Request(
+                  f"{base_url}{path}",
+                  data=body,
+                  method=method,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Content-Type": "application/json",
+                      "Accept": "application/json",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as response:
+                      raw = response.read().decode()
+                      return {} if not raw else json.loads(raw)
+              except urllib.error.HTTPError as exc:
+                  detail = exc.read().decode()
+                  return {"_error": {"status": exc.code, "detail": redact(detail), "path": path, "method": method}}
+
+          note("# App Store Connect Submit Report")
+          note(f"Generated: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}")
+          note("")
+
+          # Remove optional promoted subscription images again.
+          query = urllib.parse.urlencode({"fields[subscriptions]": "name,productId", "limit": "200"})
+          subscriptions_response = request("GET", f"/subscriptionGroups/{os.environ['SUBSCRIPTION_GROUP_ID']}/subscriptions?{query}")
+          deleted = 0
+          remaining_images = 0
+          subscriptions = subscriptions_response.get("data", []) if "_error" not in subscriptions_response else []
+          for subscription in subscriptions:
+              product_id = subscription.get("attributes", {}).get("productId")
+              if product_id not in target_product_ids:
+                  continue
+              image_query = urllib.parse.urlencode({"fields[subscriptionImages]": "fileName,state", "limit": "200"})
+              images_response = request("GET", f"/subscriptions/{subscription['id']}/images?{image_query}")
+              images = images_response.get("data", []) if "_error" not in images_response else []
+              for image in images:
+                  delete_response = request("DELETE", f"/subscriptionImages/{image['id']}")
+                  if "_error" in delete_response:
+                      remaining_images += 1
+                  else:
+                      deleted += 1
+          note(f"Subscription promotional images deleted in this run: {deleted}")
+          note(f"Subscription promotional images still present/failed to delete: {remaining_images}")
+          note("")
+
+          version_query = urllib.parse.urlencode(
+              {
+                  "filter[platform]": os.environ["PLATFORM"],
+                  "filter[versionString]": os.environ["APP_VERSION"],
+                  "fields[appStoreVersions]": "platform,versionString,appStoreState,appVersionState",
+                  "limit": "10",
+              }
+          )
+          versions_response = request("GET", f"/apps/{app_id}/appStoreVersions?{version_query}")
+          version_id = None
+          if "_error" in versions_response:
+              note("Version lookup failed:")
+              note(json.dumps(versions_response["_error"], indent=2))
+          elif not versions_response.get("data"):
+              note("Version lookup returned no appStoreVersions.")
+          else:
+              version = versions_response["data"][0]
+              version_id = version["id"]
+              note(f"Version ID: {version_id}")
+              note(f"Version attributes: {json.dumps(version.get('attributes', {}), indent=2)}")
+          note("")
+
+          submit_success = False
+          if version_id:
+              create_submission = request(
+                  "POST",
+                  "/reviewSubmissions",
+                  {"data": {"type": "reviewSubmissions", "relationships": {"app": {"data": {"type": "apps", "id": app_id}}}}},
+              )
+              if "_error" in create_submission:
+                  note("Create reviewSubmission failed:")
+                  note(json.dumps(create_submission["_error"], indent=2))
+                  submission_id = None
+              else:
+                  submission_id = create_submission["data"]["id"]
+                  note(f"Created reviewSubmission: {submission_id}")
+
+              if submission_id:
+                  create_item = request(
+                      "POST",
+                      "/reviewSubmissionItems",
+                      {
+                          "data": {
+                              "type": "reviewSubmissionItems",
+                              "relationships": {
+                                  "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission_id}},
+                                  "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}},
+                              },
+                          }
+                      },
+                  )
+                  if "_error" in create_item:
+                      note("Create reviewSubmissionItem failed:")
+                      note(json.dumps(create_item["_error"], indent=2))
+                  else:
+                      note(f"Created reviewSubmissionItem: {create_item['data']['id']}")
+
+                  submit_review = request(
+                      "PATCH",
+                      f"/reviewSubmissions/{submission_id}",
+                      {"data": {"type": "reviewSubmissions", "id": submission_id, "attributes": {"submitted": True}}},
+                  )
+                  if "_error" in submit_review:
+                      note("Submit reviewSubmission failed:")
+                      note(json.dumps(submit_review["_error"], indent=2))
+                  else:
+                      submit_success = True
+                      note(f"Submitted reviewSubmission: {submission_id}")
+
+              if not submit_success:
+                  legacy_submit = request(
+                      "POST",
+                      "/appStoreVersionSubmissions",
+                      {
+                          "data": {
+                              "type": "appStoreVersionSubmissions",
+                              "relationships": {
+                                  "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}}
+                              },
+                          }
+                      },
+                  )
+                  if "_error" in legacy_submit:
+                      note("Legacy appStoreVersionSubmission failed:")
+                      note(json.dumps(legacy_submit["_error"], indent=2))
+                  else:
+                      submit_success = True
+                      note(f"Submitted legacy appStoreVersionSubmission: {legacy_submit['data']['id']}")
+
+          note("")
+          note(f"Final submit_success: {submit_success}")
+          Path("ASC_SUBMIT_REPORT.md").write_text("\n".join(report) + "\n", encoding="utf-8")
+          PY
+
+      - name: Commit report
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ASC_SUBMIT_REPORT.md
+          git commit -m "Add App Store submit report" || exit 0
+          git push
