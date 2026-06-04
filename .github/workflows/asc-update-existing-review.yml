@@ -1,0 +1,134 @@
+name: Update Existing App Review
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/asc-update-existing-review.yml"
+
+permissions:
+  contents: write
+
+env:
+  REVIEW_SUBMISSION_ID: "200d7fd2-3f06-49ef-8be9-b98ef488728e"
+  ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID || secrets.APP_STORE_CONNECT_KEY_ID || secrets.ASC_KEY_ID }}
+  ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID || secrets.APP_STORE_CONNECT_ISSUER_ID || secrets.ASC_ISSUER_ID }}
+  ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY || secrets.APP_STORE_CONNECT_PRIVATE_KEY || secrets.ASC_PRIVATE_KEY }}
+  ASC_PRIVATE_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY_BASE64 || secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 || secrets.ASC_PRIVATE_KEY_BASE64 }}
+
+jobs:
+  update-review:
+    name: Update existing rejected review submission
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+
+      - name: Update review submission
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install pyjwt cryptography
+          python <<'PY'
+          import base64
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.request
+          from pathlib import Path
+
+          import jwt
+
+          report = ["# App Store Connect Update Review Report", f"Generated: {time.strftime('%Y-%m-%d %H:%M:%S UTC', time.gmtime())}", ""]
+
+          key = os.environ.get("ASC_PRIVATE_KEY", "")
+          key_base64 = os.environ.get("ASC_PRIVATE_KEY_BASE64", "")
+          if key_base64:
+              key = base64.b64decode(key_base64).decode()
+
+          token = jwt.encode(
+              {
+                  "iss": os.environ["ASC_ISSUER_ID"],
+                  "iat": int(time.time()) - 60,
+                  "exp": int(time.time()) + 20 * 60,
+                  "aud": "appstoreconnect-v1",
+              },
+              key,
+              algorithm="ES256",
+              headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"},
+          )
+
+          base_url = "https://api.appstoreconnect.apple.com/v1"
+          submission_id = os.environ["REVIEW_SUBMISSION_ID"]
+
+          def request(method, path, payload=None):
+              body = None if payload is None else json.dumps(payload).encode()
+              req = urllib.request.Request(
+                  f"{base_url}{path}",
+                  data=body,
+                  method=method,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Content-Type": "application/json",
+                      "Accept": "application/json",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as response:
+                      raw = response.read().decode()
+                      return {} if not raw else json.loads(raw)
+              except urllib.error.HTTPError as exc:
+                  return {
+                      "_error": {
+                          "status": exc.code,
+                          "detail": exc.read().decode(),
+                          "path": path,
+                          "method": method,
+                      }
+                  }
+
+          before = request("GET", f"/reviewSubmissions/{submission_id}?fields[reviewSubmissions]=state,submittedDate")
+          report.append("Before:")
+          report.append(json.dumps(before, indent=2))
+          report.append("")
+
+          update = request(
+              "PATCH",
+              f"/reviewSubmissions/{submission_id}",
+              {
+                  "data": {
+                      "type": "reviewSubmissions",
+                      "id": submission_id,
+                      "attributes": {"submitted": True},
+                  }
+              },
+          )
+          report.append("Update response:")
+          report.append(json.dumps(update, indent=2))
+          report.append("")
+
+          after = request("GET", f"/reviewSubmissions/{submission_id}?fields[reviewSubmissions]=state,submittedDate")
+          report.append("After:")
+          report.append(json.dumps(after, indent=2))
+          report.append("")
+          report.append(f"Final update_success: {'_error' not in update}")
+
+          Path("ASC_UPDATE_REVIEW_REPORT.md").write_text("\n".join(report) + "\n", encoding="utf-8")
+          if "_error" in update:
+              raise SystemExit(1)
+          PY
+
+      - name: Commit report
+        if: always()
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ASC_UPDATE_REVIEW_REPORT.md
+          git commit -m "Add App Store update review report" || exit 0
+          git push
