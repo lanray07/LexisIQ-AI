@@ -1,0 +1,143 @@
+name: Delete Subscription Promotional Images
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/asc-delete-subscription-promotional-images.yml"
+
+env:
+  ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID || secrets.APP_STORE_CONNECT_KEY_ID || secrets.ASC_KEY_ID }}
+  ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_API_ISSUER_ID || secrets.APP_STORE_CONNECT_ISSUER_ID || secrets.ASC_ISSUER_ID }}
+  ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY || secrets.APP_STORE_CONNECT_PRIVATE_KEY || secrets.ASC_PRIVATE_KEY }}
+  ASC_PRIVATE_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_PRIVATE_KEY_BASE64 || secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 || secrets.ASC_PRIVATE_KEY_BASE64 }}
+  SUBSCRIPTION_GROUP_ID: "22120736"
+
+jobs:
+  delete-promotional-images:
+    name: Delete promoted subscription images
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate App Store Connect secrets
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in ASC_KEY_ID ASC_ISSUER_ID; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::$name is required."
+              missing=1
+            fi
+          done
+          if [[ -z "$ASC_PRIVATE_KEY" && -z "$ASC_PRIVATE_KEY_BASE64" ]]; then
+            echo "::error::ASC_PRIVATE_KEY or ASC_PRIVATE_KEY_BASE64 is required."
+            missing=1
+          fi
+          exit "$missing"
+
+      - name: Delete subscription promotional images
+        run: |
+          set -euo pipefail
+          python -m pip install --upgrade pip
+          python -m pip install pyjwt cryptography
+          python <<'PY'
+          import base64
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+
+          import jwt
+
+          key = os.environ.get("ASC_PRIVATE_KEY", "")
+          key_base64 = os.environ.get("ASC_PRIVATE_KEY_BASE64", "")
+          if key_base64:
+              key = base64.b64decode(key_base64).decode()
+
+          token = jwt.encode(
+              {
+                  "iss": os.environ["ASC_ISSUER_ID"],
+                  "iat": int(time.time()) - 60,
+                  "exp": int(time.time()) + 20 * 60,
+                  "aud": "appstoreconnect-v1",
+              },
+              key,
+              algorithm="ES256",
+              headers={"kid": os.environ["ASC_KEY_ID"], "typ": "JWT"},
+          )
+
+          base_url = "https://api.appstoreconnect.apple.com/v1"
+          target_product_ids = {
+              "lexisiq.professional.monthly",
+              "lexisiq.professional.yearly",
+              "lexisiq.chambers.monthly",
+          }
+
+          def request(method, path, payload=None):
+              body = None if payload is None else json.dumps(payload).encode()
+              req = urllib.request.Request(
+                  f"{base_url}{path}",
+                  data=body,
+                  method=method,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Content-Type": "application/json",
+                      "Accept": "application/json",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as response:
+                      raw = response.read().decode()
+                      return {} if not raw else json.loads(raw)
+              except urllib.error.HTTPError as exc:
+                  detail = exc.read().decode()
+                  raise RuntimeError(f"{method} {path} failed with {exc.code}: {detail}") from exc
+
+          query = urllib.parse.urlencode(
+              {
+                  "fields[subscriptions]": "name,productId",
+                  "limit": "200",
+              }
+          )
+          subscriptions = request(
+              "GET",
+              f"/subscriptionGroups/{os.environ['SUBSCRIPTION_GROUP_ID']}/subscriptions?{query}",
+          ).get("data", [])
+
+          deleted = []
+          for subscription in subscriptions:
+              attrs = subscription.get("attributes", {})
+              product_id = attrs.get("productId")
+              if product_id not in target_product_ids:
+                  continue
+
+              image_query = urllib.parse.urlencode(
+                  {
+                      "fields[subscriptionImages]": "fileName,state",
+                      "limit": "200",
+                  }
+              )
+              images = request(
+                  "GET",
+                  f"/subscriptions/{subscription['id']}/images?{image_query}",
+              ).get("data", [])
+
+              if not images:
+                  print(f"No promotional images found for {product_id}.")
+                  continue
+
+              for image in images:
+                  image_id = image["id"]
+                  file_name = image.get("attributes", {}).get("fileName", "(unnamed)")
+                  request("DELETE", f"/subscriptionImages/{image_id}")
+                  deleted.append((product_id, image_id, file_name))
+                  print(f"Deleted promotional image {image_id} ({file_name}) for {product_id}.")
+
+          print(f"Deleted {len(deleted)} subscription promotional image(s).")
+          PY
