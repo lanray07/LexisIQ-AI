@@ -97,17 +97,29 @@ jobs:
           report.append(json.dumps(before, indent=2))
           report.append("")
 
-          update = request(
-              "PATCH",
-              f"/reviewSubmissions/{submission_id}",
-              {
-                  "data": {
-                      "type": "reviewSubmissions",
-                      "id": submission_id,
-                      "attributes": {"submitted": True},
-                  }
-              },
-          )
+          update = {"_error": {"detail": "No update attempted yet."}}
+          for attempt in range(1, 16):
+              report.append(f"Update attempt {attempt}:")
+              update = request(
+                  "PATCH",
+                  f"/reviewSubmissions/{submission_id}",
+                  {
+                      "data": {
+                          "type": "reviewSubmissions",
+                          "id": submission_id,
+                          "attributes": {"submitted": True},
+                      }
+                  },
+              )
+              report.append(json.dumps(update, indent=2))
+              report.append("")
+              if "_error" not in update:
+                  break
+              detail = update.get("_error", {}).get("detail", "")
+              if "try again later" not in detail and "not ready to be submitted yet" not in detail:
+                  break
+              time.sleep(60)
+
           report.append("Update response:")
           report.append(json.dumps(update, indent=2))
           report.append("")
