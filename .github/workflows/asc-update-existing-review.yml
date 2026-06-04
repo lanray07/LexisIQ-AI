@@ -97,6 +97,20 @@ jobs:
           report.append(json.dumps(before, indent=2))
           report.append("")
 
+          promoted = request(
+              "GET",
+              "/apps/6774482124/promotedPurchases?include=subscription&fields[promotedPurchases]=state,enabled,visibleForAllUsers,subscription&fields[subscriptions]=productId,name&limit=200",
+          )
+          report.append("Promoted purchases before removal:")
+          report.append(json.dumps(promoted, indent=2))
+          report.append("")
+          if "_error" not in promoted:
+              for item in promoted.get("data", []):
+                  delete_promoted = request("DELETE", f"/promotedPurchases/{item['id']}")
+                  report.append(f"Delete promotedPurchase {item['id']}:")
+                  report.append(json.dumps(delete_promoted, indent=2))
+                  report.append("")
+
           update = {"_error": {"detail": "No update attempted yet."}}
           for attempt in range(1, 16):
               report.append(f"Update attempt {attempt}:")
