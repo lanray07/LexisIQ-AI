@@ -178,7 +178,7 @@ jobs:
                   else:
                       print(f"Updated review note for {product_id}.")
 
-                  if state in {"WAITING_FOR_REVIEW", "IN_REVIEW", "PENDING_BINARY_APPROVAL", "APPROVED"}:
+                  if state in {"DEVELOPER_ACTION_NEEDED", "WAITING_FOR_REVIEW", "IN_REVIEW", "PENDING_BINARY_APPROVAL", "APPROVED"}:
                       print(f"Subscription {product_id} is already {state}; not creating a duplicate submission.")
                       continue
 
@@ -323,6 +323,33 @@ jobs:
 
               if has_version_item:
                   print("App Store version is already in the review submission.")
+                  for item in existing_items:
+                      item_version_id = (
+                          item.get("relationships", {})
+                          .get("appStoreVersion", {})
+                          .get("data", {})
+                          .get("id")
+                      )
+                      if item_version_id != version_id:
+                          continue
+                      item_state = item.get("attributes", {}).get("state")
+                      if item_state == "REJECTED":
+                          resolve_result = request(
+                              "PATCH",
+                              f"/reviewSubmissionItems/{item['id']}",
+                              {
+                                  "data": {
+                                      "type": "reviewSubmissionItems",
+                                      "id": item["id"],
+                                      "attributes": {"resolved": True},
+                                  }
+                              },
+                              tolerate=True,
+                          )
+                          if "_error" in resolve_result:
+                              print(f"Could not mark reviewSubmissionItem {item['id']} resolved.")
+                          else:
+                              print(f"Marked reviewSubmissionItem {item['id']} resolved.")
               else:
                   item_result = request(
                       "POST",
