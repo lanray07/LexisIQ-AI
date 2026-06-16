@@ -268,6 +268,23 @@ jobs:
                       )
                       if item_version_id != version_id:
                           continue
+                      cancel_submission = request(
+                          "PATCH",
+                          f"/reviewSubmissions/{submission_id}",
+                          {
+                              "data": {
+                                  "type": "reviewSubmissions",
+                                  "id": submission_id,
+                                  "attributes": {"canceled": True},
+                              }
+                          },
+                          tolerate=True,
+                      )
+                      if "_error" in cancel_submission:
+                          print(f"Could not cancel reviewSubmission {submission_id}.")
+                      else:
+                          print(f"Canceled reviewSubmission {submission_id}.")
+
                       delete_item = request("DELETE", f"/reviewSubmissionItems/{item['id']}", tolerate=True)
                       if "_error" in delete_item:
                           print(f"Could not delete reviewSubmissionItem {item['id']} from {submission_id}.")
@@ -283,12 +300,27 @@ jobs:
                   if item.get("attributes", {}).get("state") in {"READY_FOR_REVIEW", "UNRESOLVED_ISSUES"}
               ]
               submission_id = None
-              if candidates:
-                  submission_id = candidates[0]["id"]
-                  print(
-                      "Reusing review submission "
-                      f"{submission_id} state={candidates[0].get('attributes', {}).get('state')}."
-                  )
+              existing_items = []
+
+              if not prefer_new:
+                  for candidate in candidates:
+                      candidate_items = review_submission_items(candidate["id"])
+                      has_candidate_version = any(
+                          item.get("relationships", {})
+                          .get("appStoreVersion", {})
+                          .get("data", {})
+                          .get("id") == version_id
+                          for item in candidate_items
+                      )
+                      if not has_candidate_version:
+                          continue
+                      submission_id = candidate["id"]
+                      existing_items = candidate_items
+                      print(
+                          "Reusing review submission "
+                          f"{submission_id} state={candidate.get('attributes', {}).get('state')}."
+                      )
+                      break
 
               if prefer_new or not submission_id:
                   created = request(
@@ -312,7 +344,8 @@ jobs:
                       submission_id = created["data"]["id"]
                       print(f"Created review submission {submission_id}.")
 
-              existing_items = review_submission_items(submission_id)
+              if not existing_items:
+                  existing_items = review_submission_items(submission_id)
               has_version_item = any(
                   item.get("relationships", {})
                   .get("appStoreVersion", {})
