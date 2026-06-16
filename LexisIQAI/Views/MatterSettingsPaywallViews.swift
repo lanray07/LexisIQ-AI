@@ -65,24 +65,34 @@ struct PaywallView: View {
                     PlanCard(name: "Free", price: "GBP 0", renewal: "No subscription. Limited local productivity access.", features: ["Limited searches", "Limited uploads", "Limited voice notes"]) {
                         purchaseMessage = PurchaseMessage(title: "Free Plan Active", body: "You are currently using the Free plan.")
                     }
-                    PlanCard(name: "Professional Monthly", price: "GBP 29.99", renewal: "Auto-renews monthly until cancelled.", features: ["Unlimited research", "Unlimited voice processing", "Contract analyzer", "Litigation tools", "PDF exports"]) {
+                    PlanCard(name: "Professional Monthly", price: store.displayPrice(for: SubscriptionStore.professionalMonthly, fallback: "GBP 29.99"), renewal: "Auto-renews monthly until cancelled.", features: ["Unlimited research", "Unlimited voice processing", "Contract analyzer", "Litigation tools", "PDF exports"]) {
                         Task { await purchase(SubscriptionStore.professionalMonthly, planName: "Professional Monthly") }
                     }
-                    PlanCard(name: "Professional Yearly", price: "GBP 249.99", renewal: "Auto-renews yearly until cancelled.", features: ["Unlimited research", "Unlimited voice processing", "Contract analyzer", "Litigation tools", "PDF exports"]) {
+                    PlanCard(name: "Professional Yearly", price: store.displayPrice(for: SubscriptionStore.professionalYearly, fallback: "GBP 249.99"), renewal: "Auto-renews yearly until cancelled.", features: ["Unlimited research", "Unlimited voice processing", "Contract analyzer", "Litigation tools", "PDF exports"]) {
                         Task { await purchase(SubscriptionStore.professionalYearly, planName: "Professional Yearly") }
                     }
-                    PlanCard(name: "Chambers Monthly", price: "GBP 99.99", renewal: "Auto-renews monthly until cancelled.", features: ["Advanced research", "Advanced analytics", "Matter management", "Premium workspaces", "Knowledge graph"]) {
+                    PlanCard(name: "Chambers Monthly", price: store.displayPrice(for: SubscriptionStore.chambersMonthly, fallback: "GBP 99.99"), renewal: "Auto-renews monthly until cancelled.", features: ["Advanced research", "Advanced analytics", "Matter management", "Premium workspaces", "Knowledge graph"]) {
                         Task { await purchase(SubscriptionStore.chambersMonthly, planName: "Chambers Monthly") }
                     }
+
+                    Button {
+                        Task { await restorePurchases() }
+                    } label: {
+                        Label("Restore Purchases", systemImage: "arrow.clockwise")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(LexisTheme.gold)
+                    .disabled(store.isLoading)
 
                     if store.isLoading {
                         LoadingPanel()
                     } else if store.products.isEmpty {
                         PremiumPanel {
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("StoreKit 2 scaffolding")
+                                Text("Connecting to App Store")
                                     .font(.headline)
-                                Text("Product IDs are configured. Live purchasing is available when App Store Connect returns the approved subscription products.")
+                                Text("Subscription pricing loads from the Apple sandbox and App Review environment. If prices are delayed, use Restore Purchases or try again shortly.")
                                     .font(.caption)
                                     .foregroundStyle(LexisTheme.ink)
                             }
@@ -111,7 +121,10 @@ struct PaywallView: View {
                 .padding(18)
             }
         }
-        .task { await store.loadProducts() }
+        .task {
+            await store.loadProducts()
+            await store.refreshActivePlan()
+        }
         .alert(item: $purchaseMessage) { message in
             Alert(title: Text(message.title), message: Text(message.body), dismissButton: .default(Text("OK")))
         }
@@ -128,6 +141,16 @@ struct PaywallView: View {
             }
         } catch {
             purchaseMessage = PurchaseMessage(title: "Purchase Error", body: error.localizedDescription)
+        }
+    }
+
+    private func restorePurchases() async {
+        purchaseMessage = PurchaseMessage(title: "Restoring Purchases", body: "Checking your App Store purchase history.")
+        do {
+            try await store.restorePurchases()
+            purchaseMessage = PurchaseMessage(title: "Restore Complete", body: "Current plan: \(store.activePlan).")
+        } catch {
+            purchaseMessage = PurchaseMessage(title: "Restore Error", body: error.localizedDescription)
         }
     }
 }
@@ -181,6 +204,7 @@ struct PurchaseMessage: Identifiable {
 struct SettingsView: View {
     var profile: LegalProfile
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var store: SubscriptionStore
     @State private var voiceProcessing = true
     @State private var includeDisclaimers = true
     @State private var exportCitations = true
@@ -190,8 +214,12 @@ struct SettingsView: View {
             PremiumBackground()
             Form {
                 Section("Subscription") {
-                    Text("Plan: Free placeholder")
-                    NavigationLink("Manage Plans") { PaywallView() }
+                    Text("Plan: \(store.activePlan)")
+                    NavigationLink {
+                        PaywallView()
+                    } label: {
+                        Label("Manage Plans", systemImage: "crown")
+                    }
                 }
                 Section("Jurisdiction") {
                     Text(profile.jurisdiction)

@@ -2,11 +2,6 @@ name: Submit App Store Review
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/asc-submit-review.yml"
 
 env:
   APP_ID: "6774482124"
@@ -79,6 +74,13 @@ jobs:
               "lexisiq.professional.yearly",
               "lexisiq.chambers.monthly",
           }
+          review_note = (
+              "No login is required. To locate the subscriptions: launch LexisIQ AI, "
+              "complete onboarding with the default selections, then tap the Chambers "
+              "intelligence banner on the dashboard or open More > Plans & Subscription. "
+              "The paid plans use StoreKit product IDs lexisiq.professional.monthly, "
+              "lexisiq.professional.yearly, and lexisiq.chambers.monthly."
+          )
 
           def request(method, path, payload=None, *, tolerate=False):
               body = None if payload is None else json.dumps(payload).encode()
@@ -124,6 +126,83 @@ jobs:
                       print(f"Deleted subscription promotional image {image['id']} for {product_id}.")
               print(f"Subscription promotional image preflight complete. Deleted {deleted} image(s).")
 
+          def get_target_subscriptions():
+              query = urllib.parse.urlencode(
+                  {
+                      "fields[subscriptions]": "name,productId,state,reviewNote",
+                      "limit": "200",
+                  }
+              )
+              subscriptions = request(
+                  "GET",
+                  f"/subscriptionGroups/{os.environ['SUBSCRIPTION_GROUP_ID']}/subscriptions?{query}",
+              ).get("data", [])
+              matches = []
+              for subscription in subscriptions:
+                  attrs = subscription.get("attributes", {})
+                  product_id = attrs.get("productId")
+                  if product_id in target_product_ids:
+                      matches.append(subscription)
+                      print(
+                          "Found subscription "
+                          f"{product_id} ({subscription['id']}) state={attrs.get('state')}"
+                      )
+              missing = target_product_ids - {
+                  item.get("attributes", {}).get("productId") for item in matches
+              }
+              if missing:
+                  raise RuntimeError(f"Missing subscription products in group: {sorted(missing)}")
+              return matches
+
+          def prepare_subscription_submissions(subscriptions):
+              for subscription in subscriptions:
+                  subscription_id = subscription["id"]
+                  attrs = subscription.get("attributes", {})
+                  product_id = attrs.get("productId")
+                  state = attrs.get("state")
+
+                  update_result = request(
+                      "PATCH",
+                      f"/subscriptions/{subscription_id}",
+                      {
+                          "data": {
+                              "type": "subscriptions",
+                              "id": subscription_id,
+                              "attributes": {"reviewNote": review_note},
+                          }
+                      },
+                      tolerate=True,
+                  )
+                  if "_error" in update_result:
+                      print(f"Could not update review note for {product_id}; continuing.")
+                  else:
+                      print(f"Updated review note for {product_id}.")
+
+                  if state in {"WAITING_FOR_REVIEW", "IN_REVIEW", "PENDING_BINARY_APPROVAL", "APPROVED"}:
+                      print(f"Subscription {product_id} is already {state}; not creating a duplicate submission.")
+                      continue
+
+                  submit_result = request(
+                      "POST",
+                      "/subscriptionSubmissions",
+                      {
+                          "data": {
+                              "type": "subscriptionSubmissions",
+                              "relationships": {
+                                  "subscription": {
+                                      "data": {"type": "subscriptions", "id": subscription_id}
+                                  }
+                              },
+                          }
+                      },
+                      tolerate=True,
+                  )
+                  if "_error" in submit_result:
+                      print(f"Subscription submission for {product_id} was not created:")
+                      print(submit_result["_error"]["detail"])
+                  else:
+                      print(f"Created subscription submission for {product_id}: {submit_result['data']['id']}")
+
           def get_version_id():
               query = urllib.parse.urlencode(
                   {
@@ -146,53 +225,74 @@ jobs:
               return version["id"]
 
           def submit_with_review_submissions(version_id):
-              created = request(
-                  "POST",
-                  "/reviewSubmissions",
-                  {
-                      "data": {
-                          "type": "reviewSubmissions",
-                          "relationships": {
-                              "app": {"data": {"type": "apps", "id": app_id}}
-                          },
-                      }
-                  },
-                  tolerate=True,
-              )
-
-              if "_error" in created:
-                  submissions = request(
-                      "GET",
-                      f"/apps/{app_id}/reviewSubmissions?limit=20&fields[reviewSubmissions]=state,submittedDate",
-                  ).get("data", [])
-                  candidates = [
-                      item for item in submissions
-                      if item.get("attributes", {}).get("state") in {"READY_FOR_REVIEW", "DEVELOPER_REJECTED", "REJECTED", "UNRESOLVED_ISSUES"}
-                  ]
-                  if not candidates:
-                      raise RuntimeError("Could not create or find a reusable review submission.")
+              submissions = request(
+                  "GET",
+                  f"/apps/{app_id}/reviewSubmissions?limit=20&fields[reviewSubmissions]=state,submittedDate",
+              ).get("data", [])
+              candidates = [
+                  item for item in submissions
+                  if item.get("attributes", {}).get("state") in {"READY_FOR_REVIEW", "UNRESOLVED_ISSUES"}
+              ]
+              if candidates:
                   submission_id = candidates[0]["id"]
-                  print(f"Reusing review submission {submission_id}.")
+                  print(
+                      "Reusing review submission "
+                      f"{submission_id} state={candidates[0].get('attributes', {}).get('state')}."
+                  )
               else:
+                  created = request(
+                      "POST",
+                      "/reviewSubmissions",
+                      {
+                          "data": {
+                              "type": "reviewSubmissions",
+                              "relationships": {
+                                  "app": {"data": {"type": "apps", "id": app_id}}
+                              },
+                          }
+                      },
+                  )
                   submission_id = created["data"]["id"]
                   print(f"Created review submission {submission_id}.")
 
-              item_result = request(
-                  "POST",
-                  "/reviewSubmissionItems",
+              item_query = urllib.parse.urlencode(
                   {
-                      "data": {
-                          "type": "reviewSubmissionItems",
-                          "relationships": {
-                              "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission_id}},
-                              "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}},
-                          },
-                      }
-                  },
-                  tolerate=True,
+                      "fields[reviewSubmissionItems]": "state,appStoreVersion",
+                      "include": "appStoreVersion",
+                      "limit": "200",
+                  }
               )
-              if "_error" not in item_result:
-                  print("Added App Store version to review submission.")
+              existing_items = request("GET", f"/reviewSubmissions/{submission_id}/items?{item_query}").get("data", [])
+              has_version_item = any(
+                  item.get("relationships", {})
+                  .get("appStoreVersion", {})
+                  .get("data", {})
+                  .get("id") == version_id
+                  for item in existing_items
+              )
+
+              if has_version_item:
+                  print("App Store version is already in the review submission.")
+              else:
+                  item_result = request(
+                      "POST",
+                      "/reviewSubmissionItems",
+                      {
+                          "data": {
+                              "type": "reviewSubmissionItems",
+                              "relationships": {
+                                  "reviewSubmission": {"data": {"type": "reviewSubmissions", "id": submission_id}},
+                                  "appStoreVersion": {"data": {"type": "appStoreVersions", "id": version_id}},
+                              },
+                          }
+                      },
+                      tolerate=True,
+                  )
+                  if "_error" not in item_result:
+                      print("Added App Store version to review submission.")
+                  else:
+                      print("Could not add App Store version to submission:")
+                      print(item_result["_error"]["detail"])
 
               submit_result = request(
                   "PATCH",
@@ -226,6 +326,8 @@ jobs:
               print(f"Submitted with legacy appStoreVersionSubmissions endpoint: {result['data']['id']}.")
 
           delete_subscription_images()
+          subscriptions = get_target_subscriptions()
+          prepare_subscription_submissions(subscriptions)
           version_id = get_version_id()
           try:
               submit_with_review_submissions(version_id)

@@ -22,8 +22,16 @@ struct MoreView: View {
                     NavigationLink("PDF Export Center") { PDFExportView(profile: profile) }
                 }
                 Section("Business") {
-                    NavigationLink("Paywall") { PaywallView() }
-                    NavigationLink("Settings") { SettingsView(profile: profile) }
+                    NavigationLink {
+                        PaywallView()
+                    } label: {
+                        Label("Plans & Subscription", systemImage: "crown")
+                    }
+                    NavigationLink {
+                        SettingsView(profile: profile)
+                    } label: {
+                        Label("Settings", systemImage: "gearshape")
+                    }
                     NavigationLink("Widgets Placeholder") { PlaceholderArchitectureView(title: "WidgetKit", bullets: ["Today's deadlines", "Active matter", "Research shortcut", "Voice note shortcut"]) }
                     NavigationLink("Apple Watch Placeholder") { PlaceholderArchitectureView(title: "Apple Watch", bullets: ["Deadline alerts", "Voice notes", "Research reminders"]) }
                 }

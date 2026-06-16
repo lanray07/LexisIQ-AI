@@ -92,6 +92,9 @@ struct UpgradeBanner: View {
                     .foregroundStyle(LexisTheme.muted)
             }
             Spacer()
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(LexisTheme.gold)
         }
         .foregroundStyle(.white)
         .padding(14)

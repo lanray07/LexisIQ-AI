@@ -25,10 +25,34 @@ final class SubscriptionStore: ObservableObject {
         }
     }
 
+    func displayPrice(for productID: String, fallback: String) -> String {
+        products.first(where: { $0.id == productID })?.displayPrice ?? fallback
+    }
+
+    func restorePurchases() async throws {
+        isLoading = true
+        defer { isLoading = false }
+
+        try await AppStore.sync()
+        await refreshActivePlan()
+    }
+
+    func refreshActivePlan() async {
+        activePlan = "Free"
+
+        for await verification in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = verification,
+                  productIDs.contains(transaction.productID) else {
+                continue
+            }
+            activePlan = planName(for: transaction.productID)
+        }
+    }
+
     func purchase(_ product: Product) async throws {
         let result = try await product.purchase()
         if case .success(let verification) = result, case .verified(let transaction) = verification {
-            activePlan = transaction.productID.contains("chambers") ? "Chambers" : "Professional"
+            activePlan = planName(for: transaction.productID)
             await transaction.finish()
         }
     }
@@ -44,5 +68,9 @@ final class SubscriptionStore: ObservableObject {
 
         try await purchase(product)
         return true
+    }
+
+    private func planName(for productID: String) -> String {
+        productID.contains("chambers") ? "Chambers" : "Professional"
     }
 }

@@ -22,7 +22,12 @@ struct DashboardView: View {
                             .foregroundStyle(LexisTheme.gold)
                     }
 
-                    UpgradeBanner()
+                    NavigationLink {
+                        PaywallView()
+                    } label: {
+                        UpgradeBanner()
+                    }
+                    .buttonStyle(.plain)
                     PremiumHumanAssetView(title: "Courtroom strategy workspace", assetName: "dashboard-courtroom")
                     LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 12)], spacing: 12) {
                         StatTile(title: "Active Matters", value: matters.count, icon: "folder")
