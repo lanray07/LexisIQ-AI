@@ -224,22 +224,73 @@ jobs:
               )
               return version["id"]
 
-          def submit_with_review_submissions(version_id):
-              submissions = request(
+          def list_candidate_review_submissions():
+              return request(
                   "GET",
                   f"/apps/{app_id}/reviewSubmissions?limit=20&fields[reviewSubmissions]=state,submittedDate",
               ).get("data", [])
+
+          def review_submission_items(submission_id):
+              item_query = urllib.parse.urlencode(
+                  {
+                      "fields[reviewSubmissionItems]": "state,appStoreVersion",
+                      "include": "appStoreVersion",
+                      "limit": "200",
+                  }
+              )
+              return request("GET", f"/reviewSubmissions/{submission_id}/items?{item_query}").get("data", [])
+
+          def cancel_existing_app_version_submission(version_id):
+              legacy_submission = request(
+                  "GET",
+                  f"/appStoreVersions/{version_id}/appStoreVersionSubmission",
+                  tolerate=True,
+              )
+              if "_error" not in legacy_submission and legacy_submission.get("data"):
+                  legacy_id = legacy_submission["data"]["id"]
+                  delete_legacy = request("DELETE", f"/appStoreVersionSubmissions/{legacy_id}", tolerate=True)
+                  if "_error" in delete_legacy:
+                      print(f"Could not delete legacy appStoreVersionSubmission {legacy_id}.")
+                  else:
+                      print(f"Deleted legacy appStoreVersionSubmission {legacy_id}.")
+
+              for submission in list_candidate_review_submissions():
+                  submission_id = submission["id"]
+                  state = submission.get("attributes", {}).get("state")
+                  if state not in {"READY_FOR_REVIEW", "UNRESOLVED_ISSUES"}:
+                      continue
+                  for item in review_submission_items(submission_id):
+                      item_version_id = (
+                          item.get("relationships", {})
+                          .get("appStoreVersion", {})
+                          .get("data", {})
+                          .get("id")
+                      )
+                      if item_version_id != version_id:
+                          continue
+                      delete_item = request("DELETE", f"/reviewSubmissionItems/{item['id']}", tolerate=True)
+                      if "_error" in delete_item:
+                          print(f"Could not delete reviewSubmissionItem {item['id']} from {submission_id}.")
+                      else:
+                          print(f"Deleted reviewSubmissionItem {item['id']} from {submission_id}.")
+
+              print("Waiting briefly for App Store Connect submission-state propagation.")
+              time.sleep(30)
+
+          def submit_with_review_submissions(version_id, prefer_new=False):
               candidates = [
-                  item for item in submissions
+                  item for item in list_candidate_review_submissions()
                   if item.get("attributes", {}).get("state") in {"READY_FOR_REVIEW", "UNRESOLVED_ISSUES"}
               ]
+              submission_id = None
               if candidates:
                   submission_id = candidates[0]["id"]
                   print(
                       "Reusing review submission "
                       f"{submission_id} state={candidates[0].get('attributes', {}).get('state')}."
                   )
-              else:
+
+              if prefer_new or not submission_id:
                   created = request(
                       "POST",
                       "/reviewSubmissions",
@@ -251,18 +302,17 @@ jobs:
                               },
                           }
                       },
+                      tolerate=True,
                   )
-                  submission_id = created["data"]["id"]
-                  print(f"Created review submission {submission_id}.")
+                  if "_error" in created:
+                      if not submission_id:
+                          raise RuntimeError("Could not create or find a reusable review submission.")
+                      print("Could not create a fresh review submission; reusing the existing one.")
+                  else:
+                      submission_id = created["data"]["id"]
+                      print(f"Created review submission {submission_id}.")
 
-              item_query = urllib.parse.urlencode(
-                  {
-                      "fields[reviewSubmissionItems]": "state,appStoreVersion",
-                      "include": "appStoreVersion",
-                      "limit": "200",
-                  }
-              )
-              existing_items = request("GET", f"/reviewSubmissions/{submission_id}/items?{item_query}").get("data", [])
+              existing_items = review_submission_items(submission_id)
               has_version_item = any(
                   item.get("relationships", {})
                   .get("appStoreVersion", {})
@@ -333,6 +383,7 @@ jobs:
               submit_with_review_submissions(version_id)
           except Exception as exc:
               print(f"Modern reviewSubmissions flow failed: {exc}")
-              submit_with_legacy_app_store_version_submission(version_id)
+              cancel_existing_app_version_submission(version_id)
+              submit_with_review_submissions(version_id, prefer_new=True)
           print("App Store review submission workflow completed.")
           PY
